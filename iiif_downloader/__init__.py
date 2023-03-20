@@ -53,14 +53,17 @@ class Manifest:
           for k in j.get('images', []):
             url = k['resource']['@id']
             # load the image metadata
-            meta_url = '/'.join(url.split('/')[:-4]) + '/info.json'
-            meta = requests.get(meta_url).json()
+            # meta_url = '/'.join(url.split('/')[:-4]) + '/info.json'
+            # meta_url = "ddd"
+            # meta = requests.get(meta_url).json()
+            meta = self.json['metadata']
+
             # allow discrete sizes in image json to take precedence
             if 'sizes' in meta:
               width = meta['sizes'][-1]['width']
             else:
               width = k['resource'].get('width', self.width)
-            im = Image(width=width, url=url, out_dir=self.out_dir, verbose=self.verbose)
+            im = Image(id=self.id,width=width, url=url, out_dir=self.out_dir, verbose=self.verbose)
             im.save()
             c += 1
             if limit and c >= limit: return
@@ -80,10 +83,12 @@ class Image:
   def load_from_url(self, *args):
     '''Load a IIIF image from a url'''
     url = args[0] if len(args) else self.url
-    url = self.format_url(url)
+    # url = self.format_url(url)
     if self.verbose: print(' * loading image from url', url)
     self.id = url.split('/')[-5]
-    self.img = requests.get(url).content
+    response = requests.get(url)
+    self.img = response.content
+
 
   def format_url(self, url):
     '''Format the url to request an image of a reasonable size'''
@@ -96,7 +101,7 @@ class Image:
 
   def save(self):
     '''Save image to disk. NB: '''
-    out_path = os.path.join(self.out_dir, 'images', self.id)
+    out_path = os.path.join(self.out_dir, 'images', self.url.split('/')[-6].split('.')[0])
     if not out_path.endswith('.png'):
       out_path += '.png'
     if self.verbose: print(' * saving', out_path)
